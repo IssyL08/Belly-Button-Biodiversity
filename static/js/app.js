@@ -1,192 +1,189 @@
-//global variable
-var data;
-
-//init function to fill in the select option
-
-function init() {
-  d3.json("JS/data/samples.json").then(dataInitial => {
-    data = dataInitial;
-    var selectValues = dataInitial.names;
-
-    var selectOpt = d3.select("#selDataset");
-
-    selectValues.forEach(value => {
-      selectOpt
-        .append("option")
-        .text(value)
-        .attr("value", function() {
-          return value;
-        });
-    });
-  });
-}
-//start filling the data inside the select option
-init();
-
-//
-
-d3.selectAll("#selDataset").on("change", plotFunctions);
-
-function plotFunctions() {
-  var valueSelect = d3.select("#selDataset").node().value;
-  demographicFunc(valueSelect);
-  panelPlot(valueSelect);
-  demographicFunc(valueSelect);
-  bubbleChart(valueSelect);
-  gaugeChart(valueSelect);
-}
-
-function demographicFunc(valueSelect) {
-  var filterValue2 = data.samples.filter(value => value.id == valueSelect);
-  var ouid = filterValue2.map(v => v.otu_ids);
-  ouid = treatOuid(ouid[0].slice(0, 10));
-  var valueX = filterValue2.map(v => v.sample_values);
-  valueX = valueX[0].slice(0, 10);
-
-  var out_label = filterValue2.map(v => v.otu_labels);
-  var names = treatBacName(out_label[0]).slice(0, 10);
-  // console.log(ouid);
-  // console.log(valueX);
-  // console.log(out_label);
-  // console.log(names);
-
-  // Create the Trace
-  var trace = {
-    x: valueX,
-    y: ouid,
-    text: names,
-    type: "bar",
-    orientation: "h"
-  };
-
-  var layout = {
-    yaxis: {
-      autorange: "reversed"
-    }
-  };
-
-  // Create the data array for the plot
-  var dataV = [trace];
-
-  // Plot the chart to a div tag with id "bar-plot"
-  Plotly.newPlot("bar", dataV, layout);
-}
-
-function panelPlot(valueSelect) {
-  //   console.log(valueSelect);
-  var filterValue = data.metadata.filter(value => value.id == valueSelect);
-
-  var divValue = d3.select(".panel-body");
-  divValue.html("");
-  divValue.append("p").text(`id: ${filterValue[0].id}`);
-  divValue.append("p").text(`ethnicity: ${filterValue[0].ethnicity}`);
-  divValue.append("p").text(`gender: ${filterValue[0].gender}`);
-  divValue.append("p").text(`age: ${filterValue[0].age}`);
-  divValue.append("p").text(`location: ${filterValue[0].location}`);
-  divValue.append("p").text(`bbtype: ${filterValue[0].bbtype}`);
-  divValue.append("p").text(`wfreq: ${filterValue[0].wfreq}`);
-}
-
-function bubbleChart(valueSelect) {
-  var filterValue3 = data.samples.filter(value => value.id == valueSelect);
-  var ouid = filterValue3.map(v => v.otu_ids);
-  ouid = ouid[0];
-  var valueY = filterValue3.map(v => v.sample_values);
-  valueY = valueY[0];
-
-  var out_label = filterValue3.map(v => v.otu_labels);
-  out_label = treatBacName(out_label[0]);
-
-  var trace1 = {
-    x: ouid,
-    y: valueY,
-    mode: "markers",
-    marker: {
-      color: ouid,
-      colorscale: "Earth",
-      size: valueY
-    },
-    text: out_label
-  };
-
-  var data2 = [trace1];
-
-  var layout = {
-    showlegend: false,
-    xaxis: { title: "OTU ID" }
-  };
-
-  Plotly.newPlot("bubble", data2, layout);
-}
-
-//function to create gauge chart and set the value based on the value selected
-function gaugeChart(valueSelect) {
-  var filterValue = data.metadata.filter(value => value.id == valueSelect);
-  var weeklyFreq = filterValue[0].wfreq;
-
-  var data2 = [
-    {
-      domain: { x: [0, 1], y: [0, 1] },
-      title: {
-        text: "Belly Button Washing Frequency <br>Scrubs per Week"
-      },
-      type: "indicator",
-
-      mode: "gauge",
-      gauge: {
-        axis: {
-          range: [0, 9],
-          tickvals: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-          ticks: "outside"
-        },
-
-
-        steps: [
-          { range: [0, 1], color: "F8F3EC" },
-          { range: [1, 2], color: "#F4F1E5" },
-          { range: [2, 3], color: "#DFE6CA" },
-          { range: [3, 4], color: "#E5E7B3" },
-          { range: [4, 5], color: "#D5E49D " },
-          { range: [5, 6], color: "#B7CC92 " },
-          { range: [6, 7], color: "#8CBF88" },
-          { range: [7, 8], color: "#8ABB8F " },
-          { range: [8, 9], color: "#85B48A" }
-        ],
-        threshold: {
-          line: { color: "red", width: 4 },
-          thickness: 1,
-          value: weeklyFreq
-        }
-      }
-    }
-  ];
-
-  var layout = { width: 600, height: 500, margin: { t: 0, b: 0 } };
-  Plotly.newPlot("gauge", data2, layout);
-}
-
-//function to return the name of the bacteria.
-// if a array value has more than one name, it will consider the last name of the value
-// return just the 10 first values of the result
-function treatBacName(name) {
-  var listOfBact = [];
-
-  for (var i = 0; i < name.length; i++) {
-    var stringName = name[i].toString();
-    var splitValue = stringName.split(";");
-    if (splitValue.length > 1) {
-      listOfBact.push(splitValue[splitValue.length - 1]);
-    } else {
-      listOfBact.push(splitValue[0]);
-    }
+// Function to check the change in HTML page
+  function optionChanged(val) {
+    var selVal=Number(val);
+    console.log(Number(selVal))  
+    main(selVal);
   }
-  return listOfBact;
-}
+// Function to all the plotting and main calculation
+  function main(val){
+  d3.json("samples.json").then((data) => {
+    // Resetting the sample metadata to null
+    document.getElementById("sample-metadata").innerHTML=[];
+    selVal2=val;
+    // Getting the size of name
+    A= d3.set(data.names).size();
+    // Logging the name and size
+    console.log(data.names)
+    console.log(A);
+    // Scanning entire id to find the metadata
+       for (var i=0;i<A;i++){
+  //  Checking if the metadata is matching
+           if (selVal2===data.metadata[i].id){
+           //  console.log(data.metadata[i])
+           var myObj=data.metadata[i];
+          //  Adding the metadata in the sample Metadata
+            for (x in myObj) {
+               document.getElementById("sample-metadata").innerHTML += x+":"+myObj[x] + "<br>";
+             }
+            //  Finding the weekly frequency
+             avgWfreq=data.metadata[i].wfreq;
+             console.log(data.metadata[i].wfreq) 
+       }
+   }
+  //  Empty array
+   var sampleValues=[];
+   var otuIds=[];
+   var otuLabels=[];
+  //  Scanning the entire json for data
+   for (var j=0;j<A;j++){
+      // Matching the id to get the sample,out id's and labels
+       if (selVal2===Number(data.samples[j].id)){
+        //  Sorting in ascending value
+           data.samples[j].sample_values.sort(function compareFunction(firstNum, secondNum) {              
+               return firstNum-secondNum;
+             });
+            //  Console log the sample value
+             console.log(data.samples[j].sample_values)
+            // length of the sample value to get the top 10
+             B= data.samples[j].sample_values.length;
+             console.log(B)
+            //  For loop to get the top 10 value and appending in the array
+           for (var k=B-10;k<B;k++){
+           sampleValues.push(data.samples[j].sample_values[k])
+           otuIds.push('OTU '+data.samples[j].otu_ids[k])
+           otuLabels.push(data.samples[j].otu_labels[k])
+           console.log(data.samples[j].otu_labels[k])
+           }
+          //  getting the all data for selected id
+           allSample=data.samples[j].sample_values;
+           allOutIds=data.samples[j].otu_ids;
+           allOutLabels=data.samples[j].otu_labels;
+           allOutLabels=data.samples[j].otu_labels;
+   }
+   }
+  //  Console logging the labels
+   console.log(otuLabels)
+  //  Tracing the horizontal bar
+   var trace1 = {
+       x: sampleValues,
+       y: otuIds,
+       hovertext:otuLabels,
+       type: "bar",
+       orientation: 'h'
+     };
+     
+     // Create the data array for our plot
+     var data_bar = [trace1];
+     
+     // Define our plot layout
+     var layout = {
+       title: "Bellybutton Biodiversity",
+       xaxis: { title: "Title" },
+       yaxis: { title: "OTU"}
+     };
+    //  Plotting bar plot
+     Plotly.newPlot("bar", data_bar);
+   
+  //  Tracing bubble plot
+     var trace2 = {
+       x: allOutIds,
+       y: allSample,
+       hovertext:allOutLabels,
+       mode: 'markers',
+       marker: {
+         colorscale:"Earth",
+         size: allSample,
+         color:allOutIds
+       }
+     };
+   
+     // Create the data array for our plot
+     var data_bubble = [trace2];
+    //  Create layout
+     var layout = {
+      xaxis: { title: "OTU Ids" },
+       showlegend: false,
+       height: 600,
+       width: 1000
+       
+     };
+    //  plotting the Bubble plot
+     Plotly.newPlot('bubble', data_bubble, layout);
 
-function treatOuid(name) {
-  var listOfOuid = [];
-  for (var i = 0; i < name.length; i++) {
-    listOfOuid.push(`OTU ${name[i]}`);
-  }
-  return listOfOuid;
-}
+
+   // Gauge and Needle creation
+  //  Creating the level for needle
+   var level = 180*avgWfreq/9;
+   
+   // Trig to calc meter point
+   var degrees = 180 - level,
+        radius = .5;
+   var radians = degrees * Math.PI / 180;
+   var x = radius * Math.cos(radians);
+   var y = radius * Math.sin(radians);
+   var path1 = (degrees < 45 || degrees > 135) ? 'M -0.0 -0.025 L 0.0 0.025 L ' : 'M -0.025 -0.0 L 0.025 0.0 L ';
+   // Path: may have to change to create a better triangle
+   var mainPath = path1,
+        pathX = String(x),
+        space = ' ',
+        pathY = String(y),
+        pathEnd = ' Z';
+   var path = mainPath.concat(pathX,space,pathY,pathEnd);
+   
+  //  Creating the gauge
+   var data = [{ type: 'scatter',
+      x: [0], y:[0],
+       marker: {size: 14, color:'850000'},
+       showlegend: false,
+       name: 'average Srub',
+       text: avgWfreq,
+       hoverinfo: 'text+name'},
+     { values: [81/9,81/9,81/9,81/9,81/9,81/9,81/9,81/9,81/9,81],
+     rotation: 90,
+     text: ['0-1','1-2','2-3','3-4','4-5','5-6','6-7','7-8','8-9'],
+     direction: 'clockwise',
+     textinfo: 'text',
+     textposition:'inside',
+     marker: {colors: ['rgba(248, 243, 236, 0.5)',
+     'rgba(250, 210, 100, .5)',
+     'rgba(240, 200, 142, .5)',
+     'rgba(202, 190, 95, .2)',
+     'rgba(210, 180, 145, .5)',
+     'rgba(180, 170, 102, .5)',
+     'rgba(140, 160, 40, .5)',
+     'rgba(100, 106, 22, .5)',
+     'rgba(100, 106, 22, .5)',
+     ]},
+     hoverinfo: 'label',
+     hole: .5,
+     type: 'pie',
+     showlegend: false
+   }];
+   
+   var layout = {
+     shapes:[{
+         type: 'path',
+         path: path,
+         fillcolor: '850000',
+         line: {
+           color: '850000'
+         }
+       }],
+     height: 500,
+     width: 500,
+     xaxis: {zeroline:false, showticklabels:false,
+                showgrid: false, range: [-1, 1]},
+     yaxis: {zeroline:false, showticklabels:false,
+                showgrid: false, range: [-1, 1]},
+    title:"<b>Belly Button Washing Frequency</b><br>Scrubs per week"
+
+
+   };
+
+
+
+  //  Plotting the gauge plot
+  Plotly.newPlot('gauge', data, layout);
+   });}
+// Calling the Main function when page load
+   main(940);

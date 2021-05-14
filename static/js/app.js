@@ -145,7 +145,7 @@
      textinfo: 'text',
      textposition:'inside',
      marker: {colors: ['rgba(248, 243, 236, 0.5)',
-     'rgba(250, 210, 100, .5)',
+     'rgba(244, 241, 229, .5)',
      'rgba(240, 200, 142, .5)',
      'rgba(202, 190, 95, .2)',
      'rgba(210, 180, 145, .5)',
